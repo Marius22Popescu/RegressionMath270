@@ -1,0 +1,334 @@
+--- 
+title: 'Rlab 5: Regression and Model fitting' 
+author: "Popescu Marius" 
+date: "May 16, 2017" 
+output: html_document 
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(echo = TRUE) 
+```
+
+## Task 1: Simple Correlation and Linear Regression.
+
+Consider the `cars` dataset built in to R.
+
+
+**a.** Write a short preliminary analysis of the `cars` data set.  This should
+include the following: - A short paragraph describing the contents of this data
+set. [Use `?cars`] - A scatterplot of the data, side-by-side boxplots of the
+variables, and a description of visual trends evident from both plots.
+
+ANSWER: The data set cars give the speed of cars and the distances taken to stop, the data were recorded in the 1920s. We have 50 observations on 2 variables, the variables are speed and stopping distances. 
+
+
+```{r} 
+plot(cars, xlab = "Speed (mph)", ylab = "Stopping di?carsstance (ft)",las = 1)
+```
+
+```{r} 
+plot(cars, xlab = "Speed (mph)", ylab = "Stopping distance (ft)", las = 1, log = "xy")
+```
+
+**b.** Find the covariance and correlation of the speed to the stopping
+distance.  What do these provide evidence for?
+```{r} 
+cov(cars$speed,cars$dist)
+cor(cars$speed,cars$dist)
+
+```
+Covariance measure on how two variable change together. The correlation describes the degree of relationship between those two variables. It can take value from -1 to 1. In this case it is .8 this means a high relationship between speed and stoping distance. 
+
+**c.** *Build a linear model using the following command:
+`CarsModel=lm(dicovst~speed,data=cars)`.* This automatically creates the
+least-squares (best fit) linear model predicting the `cars$dist` variable from
+the `cars$speed` data.
+```{r} 
+CarsModel=lm(dist~speed,data=cars)
+plot(cars, xlab = "Speed (mph)", ylab = "Stopping distance (ft)", las = 1, log = "xy")
+abline(CarsModel)
+```
+
+Then create a plot of the line on top of the scatterplot. To do this, *first
+generate the scatterplot, and then use the command `abline(CarsModel)`.*
+
+**d.** Use the command `summary(CarsModel)` to get a numeric summary of the
+linear model you generated. Use it to write out answers to the following
+questions.  As you do this, you may find the description of the linear model
+summary (midway down the page at http://blog.yhat.com/posts/r-lm-summary.html)
+to be helpful. It's not mathematically rigorous, but gives some good rules of
+thumb for interpretting model fits-- if you have questions aobut where those
+rules of thumb come from, please ask.
+```{r} 
+summary(CarsModel)
+```
+
+(i) The middle 50% of residuals (model errors) are between what two values?
+
+ANSWER: The middle 50% of residuals are between -9.525 and 9.215
+
+(ii) The equation of the line (in $y=mx+b$ format) is...
+
+ANSWER: y = 3.9324x-17.5791
+
+(iii) Interpret the `Pr(>|t|)` column.
+
+ANSWER: This represent the probability that the variable is not relevant. It need to be as small as possible. 
+
+(iv) Give and fully interpret (as a proportion of variance explained) the
+R-squared value.
+
+ANSWER: R square is 0.6511 and its represent the propotion of variation in y (stoping distance) that is eplaind by speed after accounting for model.
+
+(v) What is the residual standard error, and what does it mean?
+
+ANSWER: The residual standard error is 15.38 and it is a random noise or messurement error.
+
+**e.** To analyze the validity of the linear model you generated, it is useful
+to examine the residuals.
+
+In any type of model fitting, the residuals should be normally distributed
+around 0 (since points should be clustered around the fit line, only rarely
+being very far away).  To test this assumption, let's start by examining the
+distribution of residuals by looking at a histogram.  *Use
+`hist(CarsModel$residuals)` and explain your findings: do the residuals look
+roughly normally distributed?*
+
+rules of thumb come from, please ask.
+```{r} 
+hist(CarsModel$residuals)
+```
+
+
+
+There are other useful plots and statistics for testing that residuals (or any
+data) are normally distributed. One common one is a Quantile-Quantile plot,
+which plots the ordered data (in this case residuals) against the theoretical
+quantiles for a normal distribution with the same mean and variance.  Generally
+speaking, the 25% mark in the ordered data should match the 25% mark in the
+normal distribution: so if the residuals are normally distributed the QQ-plot
+should be a straight line.  The QQ-plot is the second (of four useful plots the
+rest of which we won't discuss here) available from calling `plot(CarsModel)`. 
+Examine the QQ-plot: If there are any causes for concern, how do they match up
+with your histogram?
+
+```{r}
+plot(CarsModel)
+```
+
+ANSWER: The residuals are resonably normally distributed around 0. For the QQ-plot you can see that residuals are resonably normally distributed around 0 and it match with the histogram. The figure shows homoscedastic data. 
+
+**f.** Now let's actually use the model.
+
+Suppose you want to test the model against another set of data.
+
+I'll have you use this set of data:
+
+```{r} 
+testData=data.frame(speed=c(10,15,22,31,44,45,78,82,90),dist=c(12,50,40,90,154,139,286,284,345))
+```
+
+
+Use the command
+`predictedDist=predict.lm(CarsModel,newdata=testData,interval="prediction",level=0.9)`
+and also output the predicted values and their intervals of their prediction
+(these capture the range that, based on the normal distributions of residuals,
+should have a 90% chance of containing the actual distance value). How do the
+fit values compare to the actual distance values of the `testData` set?  Are the
+actual values at least contained in the prediction intervals?
+
+ANSWER: Yes, The actual values are contained in the prediction interval
+
+
+```{r} 
+predictedDist=predict.lm(CarsModel,newdata=testData,interval="prediction",level=0.9)
+predictedDist
+```
+
+To visualize this, run the following code.  I'm providing it to you because it's
+unfortunately messy to include error bars in R. There are some packages you can
+install to make it easier, but alas... it's never as easy as it should be.
+
+```{r}
+##First we'll just plot the x values vs. their predicted values:
+
+plot(testData$speed,predictedDist[,1])  #predictedDist[,1] is the `fit' column of the prediction output.
+
+##Next we will do the messy part: adding `error bars' based on the 90% prediction interval.  I'll use the "arrow" function which draws an arrow from (x0,y0) to (x1,y1)-- here we just make the y0 and y1 the lwr and upr bounds of the prediction interval for each x value.
+
+
+arrows(x0=testData$speed, y0=predictedDist[,2], x1=testData$speed,
+y1=predictedDist[,3], length=0.05, angle=90, code=3)
+
+#length, angle, code are all just hacky ways of getting the "arrow" to instead have a flat head.
+
+
+## Finally, let's add the `actual' stopping distance of the testData in red to see how the predictions match up:
+
+points(testData,col="red") 
+```
+
+What conclusions do you draw? Does the model reasonably fit the new (test) data?
+
+ANSWER: Yes, the model resonably fit the new data. The predicted value are contained in the prediction interval. The actual value are usually contained in the confidence interval but we have just a actual value that is outside of the confidence interval.
+
+
+##Task 2: Fitting a multilinear model.
+
+For this task, I also want you to practice importing a data set into R. The
+easiest way through RStudio (unless you want to automate importing data) is to
+use the **Import Dataset** feature in the Environment window.
+
+You'll have many options, but most datasets you'll work with are CSV (Comma
+Separated Value) files.
+
+For this task, you'll first need to download the data set posted on Canvas. 
+Please also read the description of the data set, and familiarize yourself with
+the meaning of each of the variables.
+
+Once downloaded, import the data set.  You'll need to make a few changes as you
+import it: we'll go over these together in class.
+
+**a.** First thing we'll do is partition the data set randomly into a training
+set and a testing set: we'll use just the training set to fit the model, and
+then we'll test it on the reserved testing set to see how the model on new data
+(this will help us determine if we `overfit' the model to the original training
+set).
+
+To do this, first create a random sample of 15000 of the indices from
+`1:nrow(KCHouseData)`.  Call that random sample `trainingRows`, as it will be
+the indices of rows you use to fit the model.
+
+```{r} 
+library(readr)
+KCHouseData <- read_csv("C:/Users/Marius/Downloads/KCHouseData.csv")
+trainingRows=sample(1:nrow(KCHouseData), 15000)
+##trainingRows
+```
+
+Now run the following code to create the two data subsets: 
+```{r} 
+KCTraining=KCHouseData[trainingRows,] # This takes all the columns but restricts the rows to only the random 15000 selected.
+
+KCTesting=KCHouseData[-trainingRows,] #This removes all the rows from the training set. 
+```
+
+Now that we've created a training and testing set we will set aside the testing
+set and use it **only at the end** in order to evaluate how well our model
+predicts new values.
+
+**b.** Next thing we'll do is examine the pairwise correlations of the different variables.  To do this, use `cor(KCTraining)`.  
+```{r} 
+cor(KCTraining)
+```
+Additionally, to get a matrix of scatterplots with pairs of variables graphed against each other, you can use`pairs(KCTraining)`: be patient as this can take a while to output, since it's dealing with a lot of data.  You'll also probably need to make the image full screen to see enough detail.
+```{r} 
+pairs(KCTraining)
+```
+-Based on these two measures of correlation, what two variables are most highly correlated with price? 
+-What do you notice about the correlation of those two
+variables with each other? Does this make sense?  Do you think it'd be a good
+idea to use both of these variables as predictors?  You may want to read the
+first paragraph of https://en.wikipedia.org/wiki/Multicollinearity before
+writing your response. -What three variables are least correlated with the
+price?
+
+ANSWER: The most highly corelated with price are sqft living and bathrooms.
+The last three corelated with price are zip code, long and condition. Yes it is a good  idea to use both variable as prediction because in the  cor(KCTraining) some corelations are negative and fore those the scatterplots will help for a good prediction.
+
+
+**c.** When fitting a model, the naive approach would be to throw everything in as a predictor.  Let's see the potential harm in doing that:
+
+-Create a model using all the variables as predictors:
+`BigModel=lm(price~.,data=KCTraining)`.  The `.` indicates that you are using
+every other variable in the attached data set. -Perform a `summary(BigModel)`. 
+-Given the correlations of each predictor variable with price, does it make
+sense that some of the coefficients are negative?  Also do those negative
+coefficients make sense in terms of the variables? [The reason for the negative coefficeitns is in large part due to multicollinearity, referenced in part b.]
+
+There are some things  that are still useful in a large model.  As an example...
+-All other factors being equal, how much does having waterfront property increase the value of a house?
+```{r} 
+BigModel=lm(price~.,data=KCTraining)
+summary(BigModel)
+```
+
+ANSWER: Having  waterfront will increase the property price with 5.899%.
+
+ **d.** Let's try to scale down our model.  We'll use the adjusted$R^2$ to do that, since the standard$R^2$ measure of fit of a model to training data will always improve when you add more predictors: even if you have completely random lists of numbers as predictors.
+ 
+The adjusted $R^2$ gives the $R^2$ value above and beyond what you'd expect from a random list of $n$ predictor variables.  
+
+
+I'm going to provide a way of finding a 'best' subset of variables to use to predict price.  This will require you to install the "leaps" package by doing `install.packages("leaps")` in your console. Once you've done that, run the following code:
+
+```{r}
+library(leaps)
+leaps(x=as.matrix(KCTraining[,2:ncol(KCTraining)]),y=as.matrix(KCTraining[,1]),method="adjr2",nbest=1)
+```
+
+This goes through every possible subset of variables (all $2^12$ subsets in this case), and then prints out the Variables that are included in the BEST subset of each size.  So if you were to see a row like:
+
+`6 FALSE TRUE TRUE FALSE FALSE  FALSE  TRUE TRUE  TRUE FALSE  TRUE FALSE`
+
+That would mean that in the "best" model (the one with highest adjusted $R^2$ value) with 5 variables, the predictors are:
+
+`bathrooms ---- sqft_living ---- ---- ---- view condition yr_built ---- lat ----`
+
+This also outputs a list of adjusted $R^2$ values for the `best' models. Choose one around when the adjusted $R^2$ no longer grows significantly ( <0.01 by adding another variable would be appropriate).  Then find the corresponding subset of variables, and write them here:
+
+"My choice of predictors based on best-subset selection (using adjusted $R^2$) is sqrt living, water front, view, year built, lat long"
+
+
+
+
+**e.** Build the model using the subset of variables you selected in d.  Write the equation of this model, give it's $R^2$ and adjusted $R^2$, and verify that all of the variables are significant predictors under this model.
+
+
+```{r}
+ReducedModel=lm(price~sqft_living+waterfront+view+yr_built+lat+long,data=KCTraining)
+```
+
+**f.** Analyze the residuals of your model (in the same ways you did in Task 1).
+
+```{r} 
+hist(ReducedModel$residuals,breaks=45 )
+```
+
+ANSWER: The residuals are resonably normally distributed around 0, the graph it is little bit shew on the borders. Some residuals are very big like 1000000 or 2000000.
+
+**g.** Evaluate the model against the test data set by doing the following: 
+
+- Create a vector of predictions of price in the testing data with `predict.lm()` with `newdata=KCTesting`.
+- Take the actual price - predicted price to find the residuals $y_i-\hat{y_i}$ of the predictions for testing data.
+- Find the standard deviation of the residuals on testing data, and compare that to the standard deviation of the residuals on training data.  Which one is bigger? Why does that make sense? How much "worse" at prediction on a new set of data is the model than on a training set of data? Do you think this is an acceptable decline in accuracy of prediction?
+- Plot the histogram of test data (prediction) residuals.  Does it have any skew, or is it still fairly normally distributed?
+```{r}
+predictedPrice=predict.lm(ReducedModel,newdata=KCTesting,interval="prediction",level=0.9)
+##predictedDist
+predictionResiduals=KCTesting$price-predictedPrice
+sd(predictionResiduals)
+hist(predictionResiduals,breaks=45)
+```
+
+ANSWER: There is not normal distributed it is flat on the  top and has skew arrows. For the QQ-plot you can see that residuals are not normally distributed around 0. The QQ-plot match with the histogram. The figure shows heteroscedastic data. 
+
+```{r}
+plot(ReducedModel)
+```
+
+**h.** Use your model (in R) to predict: what would be the cost of a house with:
+
+4 bedrooms, 2 bathrooms, 2000 square feet of living space, 1200 square feet on the lot, with 2 floors, no waterfront, a decent view, in great (4) condition, built in 1967, never substantially modeled, and at (lat,long) of (47.743 -122.215)?
+
+Show how you managed to create this prediction in R.
+One option: you can create a vector of this information with a "dummy" price, then bind it to the testing data set as the last row using `rbind()`, and then find the prediction of that last row.
+
+
+```{r}
+testDataModel=data.frame(sqft_living=c(2000), waterfront=c(0), view=c(1), yr_built=c(1967), lat =c(47.743),long=c(-122.215))
+predictedModel=predict.lm(ReducedModel,newdata=testDataModel,interval="prediction",level=0.9)
+predictedModel
+```
+The price will be $691561.5 with a 90% confidence on the interval with the lower bound  $325561.2 and the upper bound $1057562.
+
